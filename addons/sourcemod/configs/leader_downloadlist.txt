@@ -1,0 +1,2 @@
+materials/nide/leader/trail.vmt
+materials/nide/leader/trail.vtf
