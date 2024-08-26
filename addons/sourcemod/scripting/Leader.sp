@@ -8,12 +8,15 @@
 #define NEON
 #define TRAIL
 #define COOLDOWN
-//#define FLAGS
+#define FLAGS
 
 #define TAG "[Leader]"
 
 #define MAX_PHRASES 10
 #define MAX_LEADERS 100
+
+#define NOTE_DELAY 120
+#define NOTE_COUNT_MAX 2
 
 #define ACTION_DEATH        0
 #define ACTION_DISCONNECT   1
@@ -44,6 +47,8 @@ int CurrentLeader;
 int LeadersCount;
 int LeadersList[MAX_LEADERS];
 
+bool Late;
+
 enum struct Client
 {
     bool Access;
@@ -55,6 +60,7 @@ enum struct Client
 
 Client Clients[MAXPLAYERS + 1];
 
+#include "Leader/chat.sp"
 #include "Leader/flags.sp"
 #include "Leader/markers.sp"
 #include "Leader/config.sp"
@@ -66,12 +72,19 @@ Client Clients[MAXPLAYERS + 1];
 #include "Leader/menu.sp"
 #include "Leader/cooldown.sp"
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+    Late = late;
+    
+    return APLRes_Success;
+}
+
 public Plugin myinfo =
 {
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.0",
+    version = "1.1",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -130,6 +143,11 @@ public void OnMapStart()
 
     BeaconPrecache();
     LoadDownloadList();
+}
+
+public void OnMapEnd()
+{
+    Late = false;
 }
 
 public void OnGameRestart(ConVar cvar, const char[] oldValue, const char[] newValue)
@@ -249,11 +267,12 @@ public Action Command_Leader(int client, int args)
         {
             char name[64];
             GetClientName(CurrentLeader, name, sizeof(name));
-            bool russian = (IsClientRussian(client));
-            char message[256];
-
-            FormatEx(message, sizeof(message), russian ? "Сейчас лидерствует %s":"Current leader is %s", name);
-            PrintToChat(client, "\x01\x07%s%s \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], message);
+            
+            switch(IsClientRussian(client))
+            {
+                case true:  LeaderPrintToChat(client, "Сейчас лидерствует %s", name);
+                case false: LeaderPrintToChat(client, "Current leader is %s", name);
+            }
         }
         return Plugin_Handled;
     }
@@ -293,18 +312,25 @@ public Action Command_Leader(int client, int args)
         NewLeader(client);
     }
 
-    bool russian = (IsClientRussian(client));
-    char message[256];
-    strcopy(message, sizeof(message), russian ? "У вас нет доступа":"You have no access");
-    PrintToChat(client, "\x01\x07%s%s \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], message);
+    switch(IsClientRussian(client))
+    {
+        case true:  LeaderPrintToChat(client, "У вас нет доступа");
+        case false: LeaderPrintToChat(client, "You have no access");
+    }
+
     return Plugin_Handled;
 }
 
 public Action Command_Leaders(int client, int args)
 {
-    bool russian = (IsClientRussian(client));
     char message[1024];
-    FormatEx(message, sizeof(message), "\x01\x07%s%s \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], russian ? "Потенциальные лидеры: ":"Potential leaders: ");
+
+    switch(IsClientRussian(client))
+    {
+        case true:  FormatEx(message, sizeof(message), "Потенциальные лидеры: ");
+        case false: FormatEx(message, sizeof(message), "Potential leaders: ");
+    }
+
     int count;
     char name[64];
     for(int i = 1; i <= MaxClients; i++)
@@ -318,12 +344,21 @@ public Action Command_Leaders(int client, int args)
         }
     }
 
-    if(count)
-        message[strlen(message) - 2] = 0;
-    else
-        StrCat(message, sizeof(message), russian ? "отсутствуют":"none");
+    switch(count)
+    {
+        case 0:
+        {
+            switch(IsClientRussian(client))
+            {
+                case true:  StrCat(message, sizeof(message), "отсутствуют");
+                case false: StrCat(message, sizeof(message), "none");
+            }
+        }
 
-    PrintToChat(client, message);
+        default: message[strlen(message) - 2] = 0;
+    }
+
+    LeaderPrintToChat(client, message);
     return Plugin_Handled;
 }
 
@@ -419,12 +454,30 @@ public void OnClientDisconnect(int client)
     if(CurrentLeader == client)
         HandleAction(ACTION_DISCONNECT);
 
+    BeaconOnClientDisconnect(client);
+
     #if defined COOLDOWN
     CooldownOnClientDisconnect(client);
     #endif
 
     #if defined FLAGS
     FlagsOnClientDisconnect(client);
+    #endif
+
+    #if defined MARKERS
+    MarkersOnClientDisconnect(client);
+    #endif
+
+    #if defined MUTE
+    MuteOnClientDisconnect(client);
+    #endif
+
+    #if defined NEON
+    NeonOnClientDisconnect(client);
+    #endif
+
+    #if defined TRAIL
+    TrailOnClientDisconnect(client);
     #endif
 
     Clients[client].Access = false;
@@ -505,7 +558,7 @@ void PrintActionRusMessage(const char[] message)
         if(!IsClientInGame(i) || GetClientLanguage(i) != RussianLanguageId)
             continue;
 
-        PrintToChat(i, "\x07%s%s \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], message);
+        LeaderPrintToChat(i, message);
     }
 }
 
@@ -519,7 +572,7 @@ void PrintActionEngMessage(const char[] message)
         if(!IsClientInGame(i) || GetClientLanguage(i) == RussianLanguageId)
             continue;
 
-        PrintToChat(i, "\x07%s%s \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], message);
+        LeaderPrintToChat(i, message);
     }
 }
 

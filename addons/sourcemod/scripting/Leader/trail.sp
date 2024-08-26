@@ -2,6 +2,15 @@
     #endinput
 #endif
 
+#define TRAIL_NOTE_MESSAGE_RU "Вы можете использовать !leader @trail"
+#define TRAIL_NOTE_MESSAGE_EN "You can use !leader @trail"
+
+#define TRAIL_ON_FORMAT_RU "%s включил трейл"
+#define TRAIL_OFF_FORMAT_RU "%s выключил трейл"
+
+#define TRAIL_ON_FORMAT_EN "%s turned on the trail"
+#define TRAIL_OFF_FORMAT_EN "%s turned off the trail"
+
 static char Command[32] = "trail";
 static float LifeTime = 2.0;
 static float StartWidth = 15.0;
@@ -11,12 +20,86 @@ static char Shift[16] = "0 10.0 10.0";
 
 static int Trail;
 
+static int NoteDelay[MAXPLAYERS + 1];
+static int NoteCount[MAXPLAYERS + 1];
+
+bool Precached;
+
+stock void TrailToggleMessage(bool toggle)
+{
+    char name[64];
+    GetClientName(CurrentLeader, name, sizeof(name));
+
+    char message_ru[256];
+    char message_en[256];
+
+    switch(toggle)
+    {
+        case true:
+        {
+            FormatEx(message_ru, sizeof(message_ru), TRAIL_ON_FORMAT_RU, name);
+            FormatEx(message_en, sizeof(message_en), TRAIL_ON_FORMAT_EN, name);
+
+        }
+        case false:
+        {
+            FormatEx(message_ru, sizeof(message_ru), TRAIL_OFF_FORMAT_RU, name);
+            FormatEx(message_en, sizeof(message_en), TRAIL_OFF_FORMAT_EN, name);
+        }
+    }
+    
+    for(int i = 1; i <= MaxClients; i++)
+    {
+        if(!IsClientInGame(i) || IsFakeClient(i) || !IsPlayerAlive(i) || i == CurrentLeader || GetClientTeam(i) != 3)
+            continue;
+    
+        if(GetClientLanguage(i) == RussianLanguageId)
+        {
+            LeaderPrintToChat(i, message_ru);
+        }
+        else
+        {
+            LeaderPrintToChat(i, message_en);
+        }
+    }
+}
+
+stock void TrailNote(bool from_menu = true)
+{
+    if(!from_menu)
+        return;
+
+    int time = GetTime();
+    int leader = CurrentLeader;
+
+    if(NoteDelay[leader] > time)
+        return;
+
+    if(NoteCount[leader] >= NOTE_COUNT_MAX)
+        return;
+
+    ++NoteCount[leader];
+    NoteDelay[leader] = time + NOTE_DELAY;
+
+    switch(IsClientRussian(leader))
+    {
+        case true:  LeaderPrintToChat(leader, TRAIL_NOTE_MESSAGE_RU);
+        case false: LeaderPrintToChat(leader, TRAIL_NOTE_MESSAGE_EN);
+    }
+}
+
+stock void TrailOnClientDisconnect(int client)
+{
+    NoteDelay[client] = 0;
+    NoteCount[client] = 0;
+}
+
 bool TrailParseCommand(const char[] command)
 {
     if(strcmp(Command, command, false))
         return false;
         
-    TrailToggle();
+    TrailToggle(false);
     return true;
 }
 
@@ -54,21 +137,23 @@ bool IsTrailActive()
     return (Trail && EntRefToEntIndex(Trail) != INVALID_ENT_REFERENCE);
 }
 
-void TrailToggle()
+void TrailToggle(bool from_menu = true)
 {
-    if(IsTrailActive())
+    TrailNote(from_menu);
+
+    switch(IsTrailActive())
     {
-        TrailOff();
-    }
-    else
-    {
-        TrailOn();
+        case true:  TrailOff(true);
+        case false: TrailOn(true);
     }
 }
 
-void TrailOn()
+void TrailOn(bool caused_by_client = false)
 {
     TrailOff();
+
+    if(!Precached)
+        return;
 
     int entity = CreateEntityByName("env_spritetrail");
 
@@ -117,9 +202,12 @@ void TrailOn()
     SetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity", CurrentLeader);
 
     Trail = EntIndexToEntRef(entity);
+
+    if(caused_by_client)
+        TrailToggleMessage(true);
 }
 
-void TrailOff()
+void TrailOff(bool caused_by_client = false)
 {
     if(Trail)
     {
@@ -129,14 +217,29 @@ void TrailOff()
             RemoveEntity(Trail);
 
         Trail = 0;
+
+        if(caused_by_client)
+            TrailToggleMessage(false);
     }
 }
 
 void TrailPrecache()
 {
-    char buffer[256];
-    strcopy(buffer, sizeof(buffer), SpriteName);
-    PrecacheGeneric(buffer, true);
-    ReplaceString(buffer, sizeof(buffer), ".vmt", ".vtf", false);
-    PrecacheGeneric(buffer, true);
+    char vtf[256];
+    char vmt[256];
+    strcopy(vmt, sizeof(vmt), SpriteName);
+    strcopy(vtf, sizeof(vtf), SpriteName);
+    ReplaceString(vtf, sizeof(vtf), ".vmt", ".vtf", false);
+
+    switch(Late)
+    {
+        case true:
+        {
+            Precached = (IsGenericPrecached(vmt) && IsGenericPrecached(vtf));
+        }
+        case false:
+        {
+            Precached = (PrecacheGeneric(vmt, true) && PrecacheGeneric(vtf, true));
+        }
+    }
 }

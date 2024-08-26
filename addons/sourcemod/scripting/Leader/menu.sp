@@ -7,9 +7,13 @@ void LeaderMenuInit()
 
 void LeaderMenuDisplay()
 {
-    bool russian = (IsClientRussian(CurrentLeader));
+    bool russian = IsClientRussian(CurrentLeader);
 
-    LeaderMenu.SetTitle(russian ? "Лидер меню":"Leader LeaderMenu");
+    switch(russian)
+    {
+        case true:  LeaderMenu.SetTitle("Лидер меню");
+        case false: LeaderMenu.SetTitle("Leader LeaderMenu");
+    }
     LeaderMenu.RemoveAllItems();
 
     char buffer[256];

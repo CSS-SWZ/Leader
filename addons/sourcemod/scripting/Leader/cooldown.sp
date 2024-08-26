@@ -9,11 +9,14 @@ bool CheckClientCooldown(int client)
     if(Clients[client].CooldownRoundsLeft <= 0)
         return false;
 
-    bool russian = IsClientRussian(client);
-
     if(GetTime() - RoundTime < 7)
     {
-        PrintToChat(client, "\x01\x07%s%s \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], russian ? "Подождите немного!":"Wait a bit!");
+        switch(IsClientRussian(client))
+        {
+            case true:  LeaderPrintToChat(client, "Подождите немного!");
+            case false: LeaderPrintToChat(client, "Wait a bit!");
+        }
+        
         return true;
     }
 

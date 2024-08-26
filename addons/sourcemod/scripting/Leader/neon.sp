@@ -2,6 +2,15 @@
     #endinput
 #endif
 
+#define NEON_NOTE_MESSAGE_RU "Вы можете использовать !leader @neon"
+#define NEON_NOTE_MESSAGE_EN "You can use !leader @neon"
+
+#define NEON_ON_FORMAT_RU "%s включил неон"
+#define NEON_OFF_FORMAT_RU "%s выключил неон"
+
+#define NEON_ON_FORMAT_EN "%s turned on the neon"
+#define NEON_OFF_FORMAT_EN "%s turned off the trail"
+
 static char Command[32] = "neon";
 static char Brightness[16] = "5";
 static char Light[32] = "0 0 255 255";
@@ -13,12 +22,84 @@ static float Distance = 100.0;
 static char Pitch[16] = "0";
 static int Neon;
 
+static int NoteDelay[MAXPLAYERS + 1];
+static int NoteCount[MAXPLAYERS + 1];
+
+stock void NeonToggleMessage(bool toggle)
+{
+    char name[64];
+    GetClientName(CurrentLeader, name, sizeof(name));
+
+    char message_ru[256];
+    char message_en[256];
+
+    switch(toggle)
+    {
+        case true:
+        {
+            FormatEx(message_ru, sizeof(message_ru), NEON_ON_FORMAT_RU, name);
+            FormatEx(message_en, sizeof(message_en), NEON_ON_FORMAT_EN, name);
+
+        }
+        case false:
+        {
+            FormatEx(message_ru, sizeof(message_ru), NEON_OFF_FORMAT_RU, name);
+            FormatEx(message_en, sizeof(message_en), NEON_OFF_FORMAT_EN, name);
+        }
+    }
+    
+    for(int i = 1; i <= MaxClients; i++)
+    {
+        if(!IsClientInGame(i) || IsFakeClient(i) || !IsPlayerAlive(i) || i == CurrentLeader || GetClientTeam(i) != 3)
+            continue;
+    
+        if(GetClientLanguage(i) == RussianLanguageId)
+        {
+            LeaderPrintToChat(i, message_ru);
+        }
+        else
+        {
+            LeaderPrintToChat(i, message_en);
+        }
+    }
+}
+
+stock void NeonNote(bool from_menu = true)
+{
+    if(!from_menu)
+        return;
+
+    int time = GetTime();
+    int leader = CurrentLeader;
+
+    if(NoteDelay[leader] > time)
+        return;
+
+    if(NoteCount[leader] >= NOTE_COUNT_MAX)
+        return;
+
+    ++NoteCount[leader];
+    NoteDelay[leader] = time + NOTE_DELAY;
+
+    switch(IsClientRussian(leader))
+    {
+        case true:  LeaderPrintToChat(leader, NEON_NOTE_MESSAGE_RU);
+        case false: LeaderPrintToChat(leader, NEON_NOTE_MESSAGE_EN);
+    }
+}
+
+stock void NeonOnClientDisconnect(int client)
+{
+    NoteDelay[client] = 0;
+    NoteCount[client] = 0;
+}
+
 bool NeonParseCommand(const char[] command)
 {
     if(strcmp(Command, command, false))
         return false;
         
-    NeonToggle();
+    NeonToggle(false);
     return true;
 }
 
@@ -67,19 +148,18 @@ bool IsNeonActive()
     return (Neon && EntRefToEntIndex(Neon) != INVALID_ENT_REFERENCE);
 }
 
-void NeonToggle()
+void NeonToggle(bool from_menu = true)
 {
-    if(IsNeonActive())
+    NeonNote(from_menu);
+
+    switch(IsNeonActive())
     {
-        NeonOff();
-    }
-    else
-    {
-        NeonOn();
+        case true:  NeonOff(true);
+        case false: NeonOn(true);
     }
 }
 
-void NeonOn()
+void NeonOn(bool caused_by_client = false)
 {
     NeonOff();
 
@@ -113,9 +193,12 @@ void NeonOn()
     AcceptEntityInput(entity, "SetParent", CurrentLeader, entity, 0);
 
     Neon = EntIndexToEntRef(entity);
+
+    if(caused_by_client)
+        NeonToggleMessage(true);
 }
 
-void NeonOff()
+void NeonOff(bool caused_by_client = false)
 {
     if(Neon)
     {
@@ -125,5 +208,8 @@ void NeonOff()
             RemoveEntity(Neon);
 
         Neon = 0;
+
+        if(caused_by_client)
+            NeonToggleMessage(false);
     }
 }

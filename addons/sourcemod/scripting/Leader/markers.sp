@@ -4,6 +4,15 @@
 
 #define MAX_MARKERS 10
 
+#define MARKERS_NOTE_FORMAT_RU "Вы можете использовать !leader @%s"
+#define MARKERS_NOTE_FORMAT_EN "You can use !leader @%s"
+
+#define MARKERS_ON_FORMAT_RU "%s установил маркер %s"
+#define MARKERS_OFF_FORMAT_RU "%s удалил маркер %s"
+
+#define MARKERS_ON_FORMAT_EN "%s has set a %s marker"
+#define MARKERS_OFF_FORMAT_EN "%s removed the %s marker"
+
 enum struct Marker
 {
     char Command[32];
@@ -15,6 +24,7 @@ enum struct Marker
     float Playbackrate;
     float LifeTime;
     float ModelScale;
+    bool Precached;
 
     void Init()
     {
@@ -31,6 +41,80 @@ static int MarkersEnts[MAX_MARKERS];
 
 static Handle MarkersTimers[MAX_MARKERS];
 
+static int NoteDelay[MAXPLAYERS + 1][MAX_MARKERS];
+static int NoteCount[MAXPLAYERS + 1][MAX_MARKERS];
+
+stock void MarkersToggleMessage(int marker, bool toggle)
+{
+    char name[64];
+    GetClientName(CurrentLeader, name, sizeof(name));
+
+    char message_ru[256];
+    char message_en[256];
+
+    switch(toggle)
+    {
+        case true:
+        {
+            FormatEx(message_ru, sizeof(message_ru), MARKERS_ON_FORMAT_RU, name, Markers[marker].Name);
+            FormatEx(message_en, sizeof(message_en), MARKERS_ON_FORMAT_EN, name, Markers[marker].Name);
+
+        }
+        case false:
+        {
+            FormatEx(message_ru, sizeof(message_ru), MARKERS_OFF_FORMAT_RU, name, Markers[marker].Name);
+            FormatEx(message_en, sizeof(message_en), MARKERS_OFF_FORMAT_EN, name, Markers[marker].Name);
+        }
+    }
+    
+    for(int i = 1; i <= MaxClients; i++)
+    {
+        if(!IsClientInGame(i) || IsFakeClient(i) || !IsPlayerAlive(i) || i == CurrentLeader || GetClientTeam(i) != 3)
+            continue;
+    
+        if(GetClientLanguage(i) == RussianLanguageId)
+        {
+            LeaderPrintToChat(i, message_ru);
+        }
+        else
+        {
+            LeaderPrintToChat(i, message_en);
+        }
+    }
+}
+
+stock void MarkersNote(int marker, bool from_menu)
+{
+    if(!from_menu)
+        return;
+
+    int time = GetTime();
+    int leader = CurrentLeader;
+
+    if(NoteDelay[leader][marker] > time)
+        return;
+
+    if(NoteCount[leader][marker] >= NOTE_COUNT_MAX)
+        return;
+
+    ++NoteCount[leader][marker];
+    NoteDelay[leader][marker] = time + NOTE_DELAY;
+
+    switch(IsClientRussian(leader))
+    {
+        case true:  LeaderPrintToChat(leader, MARKERS_NOTE_FORMAT_RU, Markers[marker].Command);
+        case false: LeaderPrintToChat(leader, MARKERS_NOTE_FORMAT_EN, Markers[marker].Command);
+    }
+}
+
+stock void MarkersOnClientDisconnect(int client)
+{
+    for(int i = 0; i < MarkersCount; ++i)
+    {
+        NoteDelay[client][i] = 0;
+        NoteCount[client][i] = 0;
+    }
+}
 
 bool MarkerParseCommand(const char[] command)
 {
@@ -38,7 +122,7 @@ bool MarkerParseCommand(const char[] command)
     {
         if(!strcmp(Markers[i].Command, command, false))
         {
-            MarkerToggle(i);
+            MarkerToggle(i, false);
             return true;
         }
     }
@@ -98,11 +182,14 @@ void MarkersMenu(int client)
         LeaderMenuDisplay();
         return;
     }
-    bool russian = (IsClientRussian(client));
 
     Menu menu = new Menu(MarkersMenu_Handler, MenuAction_Cancel | MenuAction_End | MenuAction_Select);
 
-    menu.SetTitle(russian ? "Маркеры":"Markers");
+    switch(IsClientRussian(client))
+    {
+        case true:  menu.SetTitle("Маркеры");
+        case false: menu.SetTitle("Markers");
+    }
 
     char buffer[256];
     for(int i = 0; i < MarkersCount; i++)
@@ -147,21 +234,23 @@ bool IsMarkerActive(int marker)
     return (MarkersEnts[marker] && EntRefToEntIndex(MarkersEnts[marker]) != INVALID_ENT_REFERENCE);
 }
 
-void MarkerToggle(int marker)
+void MarkerToggle(int marker, bool from_menu = true)
 {
-    if(IsMarkerActive(marker))
+    MarkersNote(marker, from_menu);
+
+    switch(IsMarkerActive(marker))
     {
-        MarkerOff(marker);
-    }
-    else
-    {
-        MarkerOn(marker);
+        case true:  MarkerOff(marker, true);
+        case false: MarkerOn(marker, true);
     }
 }
 
-void MarkerOn(int marker)
+void MarkerOn(int marker, bool caused_by_client = false)
 {
-    MarkerOff(marker);  
+    MarkerOff(marker);
+
+    if(!Markers[marker].Precached)
+        return;
 
     float ang[3];
     float pos[3];
@@ -220,6 +309,9 @@ void MarkerOn(int marker)
     MarkersEnts[marker] = EntIndexToEntRef(entity);
     if(Markers[marker].LifeTime > 0.0)
         MarkersTimers[marker] = CreateTimer(Markers[marker].LifeTime, Timer_MarkerOff, marker);
+
+    if(caused_by_client)
+        MarkersToggleMessage(marker, true);
 }
 
 public Action Timer_MarkerOff(Handle timer, int marker)
@@ -237,7 +329,7 @@ void MarkersOff()
         MarkerOff(i);
 }
 
-void MarkerOff(int marker)
+void MarkerOff(int marker, bool caused_by_client = false)
 {
     delete MarkersTimers[marker];
 
@@ -249,6 +341,9 @@ void MarkerOff(int marker)
             RemoveEntity(MarkersEnts[marker]);
 
         MarkersEnts[marker] = 0;
+
+        if(caused_by_client)
+            MarkersToggleMessage(marker, false);
     }
 }
 
@@ -259,6 +354,18 @@ public bool TraceEntityFilterPlayer(int entity, int contentsMask)
 
 void MarkersPrecache()
 {
-    for(int i = 0; i < MarkersCount; i++)
-        PrecacheModel(Markers[i].Model, true);
+    switch(Late)
+    {
+        case true:
+        {
+            for(int i = 0; i < MarkersCount; i++)
+                Markers[i].Precached = IsModelPrecached(Markers[i].Model);
+
+        }
+        case false:
+        {
+            for(int i = 0; i < MarkersCount; i++)
+                Markers[i].Precached = (PrecacheModel(Markers[i].Model, true) != 0);
+        }
+    }
 }
