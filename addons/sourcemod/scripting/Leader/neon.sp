@@ -163,6 +163,9 @@ void NeonOn(bool caused_by_client = false)
 {
     NeonOff();
 
+    if(is_map_not_ze)
+        return;
+
     int entity = CreateEntityByName("light_dynamic");
 
     if(entity == INVALID_ENT_REFERENCE)

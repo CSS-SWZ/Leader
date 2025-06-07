@@ -359,13 +359,13 @@ void MarkersPrecache()
         case true:
         {
             for(int i = 0; i < MarkersCount; i++)
-                Markers[i].Precached = IsModelPrecached(Markers[i].Model);
+                Markers[i].Precached = (!is_map_not_ze && IsModelPrecached(Markers[i].Model));
 
         }
         case false:
         {
             for(int i = 0; i < MarkersCount; i++)
-                Markers[i].Precached = (PrecacheModel(Markers[i].Model, true) != 0);
+                Markers[i].Precached = (!is_map_not_ze && PrecacheModel(Markers[i].Model, true) != 0);
         }
     }
 }

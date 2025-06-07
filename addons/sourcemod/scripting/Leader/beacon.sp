@@ -210,7 +210,7 @@ void BeaconPrecache()
     {
         case true:
         {
-            Precached = (IsModelPrecached(BEAM) && IsModelPrecached(HALO));
+            Precached = (!is_map_not_ze && IsModelPrecached(BEAM) && IsModelPrecached(HALO));
 
             if(Precached)
             {
@@ -220,9 +220,16 @@ void BeaconPrecache()
         }
         case false:
         {
-            BeamSprite = PrecacheModel(BEAM);
-            HaloSprite = PrecacheModel(HALO);
-            Precached = (BeamSprite && HaloSprite);
+            if(is_map_not_ze)
+            {
+                Precached = false;
+            }
+            else
+            {
+                BeamSprite = PrecacheModel(BEAM);
+                HaloSprite = PrecacheModel(HALO);
+                Precached = (BeamSprite && HaloSprite);
+            }
         }
     }
 }

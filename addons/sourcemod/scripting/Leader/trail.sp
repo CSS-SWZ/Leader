@@ -235,11 +235,11 @@ void TrailPrecache()
     {
         case true:
         {
-            Precached = (IsGenericPrecached(vmt) && IsGenericPrecached(vtf));
+            Precached = (!is_map_not_ze && IsGenericPrecached(vmt) && IsGenericPrecached(vtf));
         }
         case false:
         {
-            Precached = (PrecacheGeneric(vmt, true) && PrecacheGeneric(vtf, true));
+            Precached = (!is_map_not_ze && PrecacheGeneric(vmt, true) && PrecacheGeneric(vtf, true));
         }
     }
 }

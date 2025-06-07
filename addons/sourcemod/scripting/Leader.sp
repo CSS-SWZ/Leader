@@ -49,6 +49,8 @@ int LeadersList[MAX_LEADERS];
 
 bool Late;
 
+bool is_map_not_ze;
+
 enum struct Client
 {
     bool Access;
@@ -133,6 +135,17 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
+    char map[64];
+    GetCurrentMap(map, sizeof(map));
+
+    if(strncmp(map, "ze_", 3, false))
+    {
+        is_map_not_ze = true;
+    }
+    else
+    {
+        is_map_not_ze = false;
+    }
     #if defined TRAIL
     TrailPrecache();
     #endif
@@ -277,7 +290,7 @@ public Action Command_Leader(int client, int args)
         return Plugin_Handled;
     }
 
-    if(GetUserFlagBits(client) & ADMFLAG_BAN)
+    if(GetUserFlagBits(client) & (ADMFLAG_BAN|ADMFLAG_ROOT))
     {
         int target = client;
         if(args)
@@ -310,6 +323,7 @@ public Action Command_Leader(int client, int args)
         #endif
 
         NewLeader(client);
+        return Plugin_Handled;
     }
 
     switch(IsClientRussian(client))
@@ -578,6 +592,9 @@ void PrintActionEngMessage(const char[] message)
 
 void LoadDownloadList()
 {
+    if(is_map_not_ze)
+        return;
+
     char path[PLATFORM_MAX_PATH];
 
     BuildPath(Path_SM, path, sizeof(path), "configs/leader_downloadlist.txt");
