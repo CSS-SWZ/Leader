@@ -52,7 +52,7 @@ static const char Sections[][] =
     "Markers",
     #endif
 
-    #if defined MARKERS
+    #if defined MUTE
     "Mute",
     #endif
 
