@@ -28,7 +28,7 @@ void CooldownHandleAction(int action)
     if(!IsClientPotentialLeader(CurrentLeader))
         return;
 
-    int count = GetPotintialLeadersCount();
+    int count = GetPotentialLeadersCount();
 
     if(count <= 1)
         return;

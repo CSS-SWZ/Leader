@@ -86,7 +86,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.2.2",
+    version = "1.2.3",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -684,7 +684,7 @@ stock bool IsClientRussian(int client)
     return (GetClientLanguage(client) == RussianLanguageId);
 }
 
-int GetPotintialLeadersCount()
+int GetPotentialLeadersCount()
 {
     int count = 0;
 
