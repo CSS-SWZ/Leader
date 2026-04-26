@@ -1,5 +1,10 @@
 #if !defined FLAGS
-#endinput
+	#endinput
+#endif
+
+#if !defined _sourcebanspp_included
+	#undef FLAGS
+	#endinput
 #endif
 
 static ConVar FlagsCvar;
@@ -9,9 +14,7 @@ static bool Enable;
 static char Group[32];
 static int Flags;
 
-bool PreAdminChecked[MAXPLAYERS + 1];
-bool LeaderAuthorized[MAXPLAYERS + 1];
-bool Loaded[MAXPLAYERS + 1];
+static bool leader_loaded[MAXPLAYERS + 1];
 
 void FlagsInit()
 {
@@ -47,24 +50,38 @@ public void OnConVarFlagsChanged(ConVar convar, const char[] oldValue, const cha
 	Enable = (Flags || Group[0]);
 }
 
-
 void FlagsOnLeaderLoaded(int client)
 {
-	LeaderAuthorized[client] = true;
-	LoadClient(client);
+	leader_loaded[client] = true;
+
+	if(sourcebanspp)
+		SBPP_CheckLoadAdmin(client);
 }
 
-void GiveClientPerks(int client)
+public Action SBPP_OnCheckLoadAdmin(int client)
 {
 	if (!Enable)
+		return Plugin_Continue;
+
+	return leader_loaded[client] ? Plugin_Continue:Plugin_Handled;
+}
+
+public void OnClientPostAdminFilter(int client)
+{
+	GiveClientPerks(client);
+}
+
+stock void GiveClientPerks(int client)
+{
+	if(!Enable)
 		return;
 
-	if (!PreAdminChecked[client] || !LeaderAuthorized[client])
+	if(!leader_loaded[client])
 		return;
 
-	Loaded[client] = true;
+	bool leader = Clients[client].Access;
 
-	if (!Clients[client].Access)
+	if(!leader)
 		return;
 
 	GroupId group;
@@ -81,55 +98,14 @@ void GiveClientPerks(int client)
 		{
 			SetUserFlagBits(client, group.GetFlags() | GetUserFlagBits(client));
 		}
-		SetUserFlagBits(client, group.GetFlags() | GetUserFlagBits(client));
-		return;
 	}
-	SetUserFlagBits(client, Flags | GetUserFlagBits(client));
-	return;
-}
-
-void LoadClient(int client)
-{
-	if (!Enable)
-		return;
-
-	if (Loaded[client] && PreAdminChecked[client])
-		SBPP_CheckLoadAdmin(client);
-}
-
-public void OnClientPostAdminFilter(int client)
-{
-	GiveClientPerks(client);
-}
-
-public Action OnClientPreAdminCheck(int client)
-{
-	PreAdminChecked[client] = true;
-	
-	if (!Enable)
-		return Plugin_Continue;
-
-	if (Loaded[client])
-		return Plugin_Continue;
-
-	LoadClient(client);
-	return Plugin_Handled;
-}
-
-public Action SBPP_OnCheckLoadAdmin(int client)
-{
-	if (!Enable)
-		return Plugin_Continue;
-
-	if (PreAdminChecked[client] && LeaderAuthorized[client])
-		return Plugin_Continue;
-
-	return Plugin_Handled;
+	else
+	{
+		SetUserFlagBits(client, Flags | GetUserFlagBits(client));
+	}
 }
 
 public void FlagsOnClientDisconnect(int client)
 {
-	PreAdminChecked[client] = false;
-	LeaderAuthorized[client] = false;
-	Loaded[client] = false;
+	leader_loaded[client] = false;
 }

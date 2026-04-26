@@ -1,7 +1,10 @@
 #include <sourcemod>
-#include <sourcebanspp>
 #include <sdktools>
 #include <cstrike>
+
+#undef REQUIRE_PLUGIN
+#tryinclude <sourcebanspp>
+#define REQUIRE_PLUGIN
 
 #define MARKERS
 #define MUTE
@@ -60,6 +63,7 @@ enum struct Client
 
 Client Clients[MAXPLAYERS + 1];
 
+#include "Leader/libs.sp"
 #include "Leader/late.sp"
 #include "Leader/chat.sp"
 #include "Leader/flags.sp"
@@ -73,6 +77,16 @@ Client Clients[MAXPLAYERS + 1];
 #include "Leader/menu.sp"
 #include "Leader/cooldown.sp"
 
+
+public Plugin myinfo =
+{
+    name = "Leader",
+    author = "hEl",
+    description = "Provides special features to the leader",
+    version = "1.3.0",
+    url = "https://github.com/CSS-SWZ/Leader"
+};
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
     LateOnAskPluginLoad2(late);
@@ -80,17 +94,19 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     return APLRes_Success;
 }
 
-public Plugin myinfo =
+public void OnLibraryAdded(const char[] name)
 {
-    name = "Leader",
-    author = "hEl",
-    description = "Provides special features to the leader",
-    version = "1.2.8",
-    url = "https://github.com/CSS-SWZ/Leader"
-};
+    LibsManage(name, true);
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+    LibsManage(name, false);
+}
 
 public void OnPluginStart()
 {
+    LibsInit();
     LateInit();
 
     if((RussianLanguageId = GetLanguageByCode("ru")) == -1)
