@@ -145,6 +145,9 @@ void MarkersOnKeyValue(const char[] key, const char[] value)
 {
     int marker = MarkersCount - 1;
 
+    if(marker < 0 || marker >= MAX_MARKERS)
+        return;
+
     if(!strcmp(key, "command", false))
     {
         strcopy(Markers[marker].Command, sizeof(Markers[].Command), value);
