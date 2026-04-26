@@ -86,7 +86,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.2.4",
+    version = "1.2.5",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 

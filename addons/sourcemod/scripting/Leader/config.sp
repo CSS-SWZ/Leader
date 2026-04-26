@@ -203,7 +203,9 @@ public SMCResult SMC_EndSection(SMCParser smc)
                 RadioColorsOnEndSection();
         }
     }
-    SectionLoaded[CurrentSection] = true;
+
+    if(CurrentSection != Section_None)
+        SectionLoaded[CurrentSection] = true;
 
     return SMCParse_Continue;
 }
