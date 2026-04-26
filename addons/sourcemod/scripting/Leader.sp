@@ -83,7 +83,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.3.0",
+    version = "1.3.1",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -653,6 +653,9 @@ void LoadDownloadList()
     while(!file.EndOfFile() && file.ReadLine(line, sizeof(line)))
     {
         if(TrimString(line) <= 0 || line[0] == '#')
+            continue;
+
+        if(!FileExists(line))
             continue;
 
         AddFileToDownloadsTable(line);
