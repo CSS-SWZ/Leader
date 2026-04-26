@@ -43,6 +43,8 @@ public void OnConVarFlagsChanged(ConVar convar, const char[] oldValue, const cha
 	{
 		convar.GetString(Group, sizeof(Group));
 	}
+
+	Enable = (Flags || Group[0]);
 }
 
 
