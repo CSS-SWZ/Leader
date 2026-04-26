@@ -41,7 +41,7 @@ static const char RadioPhrasesEng[][] =
     "Go go go!",
     "Team, fall back!",
 	"Stick together, team.",
-    "Get in position and wait for my go",
+    "Get in position and wait for my go.",
 	"Storm the Front!",
 	"Report in, team.",
 	"Roger that.",
