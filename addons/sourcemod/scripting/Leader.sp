@@ -63,6 +63,7 @@ enum struct Client
 
 Client Clients[MAXPLAYERS + 1];
 
+#include "Leader/utils.sp"
 #include "Leader/libs.sp"
 #include "Leader/late.sp"
 #include "Leader/chat.sp"
@@ -83,7 +84,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.3.2",
+    version = "1.3.3",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -136,6 +137,7 @@ public void OnPluginStart()
     RegConsoleCmd("sm_leaders", Command_Leaders);
 
     RegAdminCmd("sm_leaders_add", Command_LeadersAdd, ADMFLAG_RCON);
+    RegAdminCmd("sm_leaders_add2", Command_LeadersAdd2, ADMFLAG_RCON);
     RegAdminCmd("sm_leaders_reload", Command_LeadersReload, ADMFLAG_RCON);
 
     for(int i = 1; i <= MaxClients; i++)
@@ -407,7 +409,67 @@ public Action Command_LeadersAdd(int client, int args)
 {
     if(!args)
     {
-        ReplyToCommand(client, "Usage: sm_leaders_add <account id> [comment]");
+        ReplyToCommand(client, "Usage: sm_leaders_add <#userid|name> [comment]");
+        return Plugin_Handled;
+    }
+
+    char target_str[40];
+    GetCmdArg(1, target_str, sizeof(target_str));
+
+    int target = FindTarget(client, target_str, true, false);
+
+    if(target == -1)
+    {
+		ReplyToTargetError(client, COMMAND_TARGET_NONE);
+		return Plugin_Handled;
+    }
+
+    int account = GetSteamAccountID(target);
+
+    if(!account)
+    {
+        ReplyToCommand(client, "Failure: cant get account");
+        return Plugin_Handled;
+    }
+
+    if(IsClientPotentialLeader(target))
+    {
+        ReplyToCommand(client, "Failure: target is already potential leader!");
+        return Plugin_Handled;
+    }
+
+    char path[PLATFORM_MAX_PATH];
+
+    BuildPath(Path_SM, path, sizeof(path), "configs/leaders.txt");
+
+    File file = OpenFile(path, "a+");
+
+    if(!file)
+    {
+        ReplyToCommand(client, "Can`t load file \"%s\"", path);
+        return Plugin_Handled;
+    }
+    file.WriteLine("");
+    if(args > 1)
+    {
+        char buffer[128];
+        GetCmdArg(2, buffer, sizeof(buffer));
+        file.WriteLine("#%s", buffer);
+    }
+    file.WriteLine("%i", account);
+    delete file;
+
+    ReplyToCommand(client, "Account id \"%i\" was successfully inserted!", account);
+
+    RequestFrame(ReloadLeaders);
+    return Plugin_Handled;
+}
+
+public Action Command_LeadersAdd2(int client, int args)
+{
+    if(!args)
+    {
+        ReplyToCommand(client, "Usage: sm_leaders_add2 <account id> [comment]");
         return Plugin_Handled;
     }
 
@@ -418,6 +480,14 @@ public Action Command_LeadersAdd(int client, int args)
     if(!account)
     {
         ReplyToCommand(client, "Failure: invalid account id");
+        return Plugin_Handled;
+    }
+
+    int target = GetClientByAccount(account);
+
+    if(target && IsClientPotentialLeader(target))
+    {
+        ReplyToCommand(client, "Failure: target is already potential leader!");
         return Plugin_Handled;
     }
 
@@ -687,8 +757,14 @@ void LoadLeaders()
 
     int account;
     char line[40];
-    while(!file.EndOfFile() && file.ReadLine(line, sizeof(line)) && LeadersCount < MAX_LEADERS)
+    while(!file.EndOfFile())
     {
+        if(LeadersCount >= MAX_LEADERS)
+            break;
+
+        if(!file.ReadLine(line, sizeof(line)))
+            continue;
+
         if(TrimString(line) <= 0 || line[0] == '#')
             continue;
 
