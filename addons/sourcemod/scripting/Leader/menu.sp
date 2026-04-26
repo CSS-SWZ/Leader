@@ -2,7 +2,7 @@ static Menu LeaderMenu;
 
 void LeaderMenuInit()
 {
-    LeaderMenu = new Menu(LeaderMenu_Handler, MenuAction_Select)
+    LeaderMenu = new Menu(LeaderMenu_Handler, MenuAction_Select);
 }
 
 void LeaderMenuDisplay()

@@ -57,7 +57,7 @@ static const char Sections[][] =
     #endif
 
     "Total"
-}
+};
 
 static const char ColorsKeys[][] = 
 {
