@@ -9,7 +9,7 @@
 #define NEON_OFF_FORMAT_RU "%s выключил неон"
 
 #define NEON_ON_FORMAT_EN "%s turned on the neon"
-#define NEON_OFF_FORMAT_EN "%s turned off the trail"
+#define NEON_OFF_FORMAT_EN "%s turned off the neon"
 
 static char Command[32] = "neon";
 static char Brightness[16] = "5";
