@@ -86,7 +86,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.1.5",
+    version = "1.1.6",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -238,6 +238,11 @@ void OnLeaderSpawn(int client)
 
 public Action Command_Leader(int client, int args)
 {
+	if(client == 0)
+	{
+		PrintToServer("[SM] Cannot use command from server console.");
+		return Plugin_Handled;
+	}
     if(CurrentLeader)
     {
         if(CurrentLeader == client)
@@ -337,6 +342,11 @@ public Action Command_Leader(int client, int args)
 
 public Action Command_Leaders(int client, int args)
 {
+	if(client == 0)
+	{
+		PrintToServer("[SM] Cannot use command from server console.");
+		return Plugin_Handled;
+	}
     char message[1024];
 
     switch(IsClientRussian(client))
