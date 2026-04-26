@@ -86,7 +86,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.2.6",
+    version = "1.2.7",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -521,6 +521,17 @@ bool NewLeader(int client)
     return true;
 }
 
+static const char FallbackPhrasesRu[ACTIONS_TOTAL][] =
+{
+    "пал смертью храбрых",
+    "вышел с сервера",
+    "завершил раунд вничью",
+    "выиграл раунд",
+    "проиграл раунд",
+    "стал лидером",
+    "покинул пост лидера"
+};
+
 void HandleAction(int action)
 {
     FeaturesOff();
@@ -542,17 +553,12 @@ void HandleAction(int action)
     {
         int index = GetRandomInt(0, count - 1);
         FormatEx(message_ru, sizeof(message_ru), "%s %s", name, Phrases[action][index]);
-        PrintActionRusMessage(message_ru);
     }
     else
     {
-        switch(action)
-        {
-            case ACTION_DEATH:      FormatEx(message_ru, sizeof(message_ru), "%s %s", name, "пал смертью храбрых");
-            case ACTION_DISCONNECT: FormatEx(message_ru, sizeof(message_ru), "%s %s", name, "вышел с сервера");
-        }
-        PrintActionRusMessage(message_ru);
+        FormatEx(message_ru, sizeof(message_ru), "%s %s", name, FallbackPhrasesRu[action]);
     }
+    PrintActionRusMessage(message_ru);
 
     switch(action)
     {
