@@ -41,19 +41,19 @@ static const char RadioPhrasesEng[][] =
     "Go go go!",
     "Team, fall back!",
 	"Stick together, team.",
+    "Get in position and wait for my go",
+	"Storm the Front!",
 	"Report in, team.",
 	"Roger that.",
 	"Enemy spotted.",
 	"Need backup.",
 	"Sector clear.",
 	"I'm in position.",
-    "Get in position and wait for my go",
-	"Storm the Front!",
 	"Reporting In.",
-	"Get out of there, it's gonna blow!.",
+	"Get out of there, it's gonna blow!",
 	"Negative.",
 	"Enemy down."
-}
+};
 
 void RadioOnKeyValue(const char[] key, const char[] value)
 {
