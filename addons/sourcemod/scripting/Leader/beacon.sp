@@ -12,8 +12,8 @@
 
 static char Command[32] = "beacon";
 
-static int BeamSprite = -1;
-static int HaloSprite = -1;
+static int BeamSprite;
+static int HaloSprite;
 
 static float Delay = 1.0;
 static int Color[4] = {128, 128, 128, 255};
@@ -202,30 +202,31 @@ void BeaconOff(bool caused_by_client = false)
 
 void BeaconPrecache()
 {
-    switch(Late)
+    Precached = false;
+
+    if(is_map_not_ze)
+        return;
+
+    bool late = LateIsPluginLoadedLate();
+
+    switch(late)
     {
         case true:
         {
-            Precached = (!is_map_not_ze && IsModelPrecached(BEAM) && IsModelPrecached(HALO));
+            Precached = (IsModelPrecached(BEAM) && IsModelPrecached(HALO));
 
             if(Precached)
             {
                 BeamSprite = PrecacheModel(BEAM);
                 HaloSprite = PrecacheModel(HALO);
+                Precached = (BeamSprite && HaloSprite);
             }
         }
         case false:
         {
-            if(is_map_not_ze)
-            {
-                Precached = false;
-            }
-            else
-            {
-                BeamSprite = PrecacheModel(BEAM);
-                HaloSprite = PrecacheModel(HALO);
-                Precached = (BeamSprite && HaloSprite);
-            }
+            BeamSprite = PrecacheModel(BEAM);
+            HaloSprite = PrecacheModel(HALO);
+            Precached = (BeamSprite && HaloSprite);
         }
     }
 }

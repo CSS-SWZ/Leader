@@ -363,18 +363,28 @@ public bool TraceEntityFilterPlayer(int entity, int contentsMask)
 
 void MarkersPrecache()
 {
-    switch(Late)
-    {
-        case true:
-        {
-            for(int i = 0; i < MarkersCount; i++)
-                Markers[i].Precached = (!is_map_not_ze && IsModelPrecached(Markers[i].Model));
+    for(int i = 0; i < MarkersCount; i++)
+        Markers[i].Precached = false;
 
-        }
-        case false:
+    if(is_map_not_ze)
+        return;
+
+    bool late = LateIsPluginLoadedLate();
+
+    for(int i = 0; i < MarkersCount; i++)
+    {
+        if(!Markers[i].Model[0])
+            continue;
+
+        if(!FileExists(Markers[i].Model))
+            continue;
+
+        if(late)
         {
-            for(int i = 0; i < MarkersCount; i++)
-                Markers[i].Precached = (!is_map_not_ze && PrecacheModel(Markers[i].Model, true) != 0);
+            Markers[i].Precached = IsModelPrecached(Markers[i].Model);
+            continue;
         }
+
+        Markers[i].Precached = (PrecacheModel(Markers[i].Model, true) != 0);
     }
 }

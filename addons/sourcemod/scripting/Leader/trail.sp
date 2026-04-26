@@ -225,21 +225,30 @@ void TrailOff(bool caused_by_client = false)
 
 void TrailPrecache()
 {
+    Precached = false;
+
     char vtf[256];
     char vmt[256];
     strcopy(vmt, sizeof(vmt), SpriteName);
     strcopy(vtf, sizeof(vtf), SpriteName);
     ReplaceString(vtf, sizeof(vtf), ".vmt", ".vtf", false);
 
-    switch(Late)
-    {
-        case true:
-        {
-            Precached = (!is_map_not_ze && IsGenericPrecached(vmt) && IsGenericPrecached(vtf));
-        }
-        case false:
-        {
-            Precached = (!is_map_not_ze && PrecacheGeneric(vmt, true) && PrecacheGeneric(vtf, true));
-        }
-    }
+    if(is_map_not_ze)
+        return;
+
+    bool late = LateIsPluginLoadedLate();
+
+    if(late)
+        return;
+
+    if(!vmt[0] || !vtf[0] || !FileExists(vmt) || !FileExists(vtf))
+        return;
+
+    // Do not enable trail on late load with connected players.
+    // IsGenericPrecached is unreliable and clients may see ERROR.
+    
+    PrecacheGeneric(vmt, true);
+    PrecacheGeneric(vtf, true);
+
+    Precached = true;
 }

@@ -47,8 +47,6 @@ int CurrentLeader;
 int LeadersCount;
 int LeadersList[MAX_LEADERS];
 
-bool Late;
-
 bool is_map_not_ze;
 
 enum struct Client
@@ -62,6 +60,7 @@ enum struct Client
 
 Client Clients[MAXPLAYERS + 1];
 
+#include "Leader/late.sp"
 #include "Leader/chat.sp"
 #include "Leader/flags.sp"
 #include "Leader/markers.sp"
@@ -76,7 +75,7 @@ Client Clients[MAXPLAYERS + 1];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-    Late = late;
+    LateOnAskPluginLoad2(late);
     
     return APLRes_Success;
 }
@@ -86,12 +85,14 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.2.7",
+    version = "1.2.8",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
 public void OnPluginStart()
 {
+    LateInit();
+
     if((RussianLanguageId = GetLanguageByCode("ru")) == -1)
     	SetFailState("Cant find russian language (see languages.cfg)");
 
@@ -160,7 +161,7 @@ public void OnMapStart()
 
 public void OnMapEnd()
 {
-    Late = false;
+    LateOnMapEnd();
 }
 
 public void OnGameRestart(ConVar cvar, const char[] oldValue, const char[] newValue)
