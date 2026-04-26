@@ -84,7 +84,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.3.3",
+    version = "1.3.4",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -522,11 +522,6 @@ public Action Command_LeadersReload(int client, int args)
     ReloadLeaders();
     ReplyToCommand(client, "[Leader] Leaderboard has been successfully reloaded. Total %i %s", LeadersCount, LeadersCount == 1 ? "leader":"leaders");
 
-    for(int i = 1; i <= MaxClients; i++)
-    {
-        if(IsClientInGame(i))
-            OnClientPutInServer(i);
-    }
     return Plugin_Handled;
 }
 
