@@ -28,7 +28,7 @@ enum
     #endif
 
     Section_Total
-}
+};
 
 static bool SectionLoaded[Section_Total];
 
@@ -65,7 +65,7 @@ static const char ColorsKeys[][] =
     "name",
     "default",
     "radio"
-}
+};
 
 static const char ActionsKeys[][] = 
 {
@@ -76,7 +76,7 @@ static const char ActionsKeys[][] =
     "lose",
     "come",
     "leave"
-}
+};
 
 static int CurrentSection = Section_None;
 

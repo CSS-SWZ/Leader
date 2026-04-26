@@ -28,7 +28,7 @@ static const char RadioCommands[][] =
     "getout",
     "negative",
     "enemydown"
-}
+};
 
 static const char RadioPhrasesEng[][] = 
 {
