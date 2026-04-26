@@ -172,6 +172,12 @@ void MarkersOnKeyValue(const char[] key, const char[] value)
     else if(!strcmp(key, "modelscale", false))
     {
         Markers[marker].ModelScale = StringToFloat(value);
+
+        if(Markers[marker].ModelScale < 0.1)
+            Markers[marker].ModelScale = 0.1;
+
+        if(Markers[marker].ModelScale > 10.0)
+            Markers[marker].ModelScale = 10.0;
     }
 }
 
@@ -294,8 +300,8 @@ void MarkerOn(int marker, bool caused_by_client = false)
     if(!DispatchSpawn(entity))
         return;
 
-    if(Markers[marker].ModelScale != 1.0 && Markers[marker].ModelScale > 0.0)
-        SetEntPropFloat(entity, Prop_Send, "m_flModelScale", 2.5);
+    if(Markers[marker].ModelScale != 1.0)
+        SetEntPropFloat(entity, Prop_Send, "m_flModelScale", Markers[marker].ModelScale);
 
     TeleportEntity(entity, start, vec, NULL_VECTOR);
 
