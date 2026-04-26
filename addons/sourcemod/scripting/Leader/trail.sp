@@ -214,7 +214,7 @@ void TrailOff(bool caused_by_client = false)
         int entity = EntRefToEntIndex(Trail);
 
         if(entity != INVALID_ENT_REFERENCE)
-            RemoveEntity(entity);
+            AcceptEntityInput(entity, "Kill");
 
         Trail = 0;
 

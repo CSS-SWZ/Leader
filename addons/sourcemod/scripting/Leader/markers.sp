@@ -338,7 +338,7 @@ void MarkerOff(int marker, bool caused_by_client = false)
         MarkersEnts[marker] = EntRefToEntIndex(MarkersEnts[marker]);
 
         if(MarkersEnts[marker] != INVALID_ENT_REFERENCE)
-            RemoveEntity(MarkersEnts[marker]);
+            AcceptEntityInput(MarkersEnts[marker], "Kill");
 
         MarkersEnts[marker] = 0;
 

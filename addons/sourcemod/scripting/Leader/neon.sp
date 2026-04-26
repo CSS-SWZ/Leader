@@ -208,7 +208,7 @@ void NeonOff(bool caused_by_client = false)
         int entity = EntRefToEntIndex(Neon);
 
         if(entity != INVALID_ENT_REFERENCE)
-            RemoveEntity(entity);
+            AcceptEntityInput(entity, "Kill");
 
         Neon = 0;
 
