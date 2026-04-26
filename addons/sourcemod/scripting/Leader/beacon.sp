@@ -133,10 +133,6 @@ void BeaconOnKeyValue(const char[] key, const char[] value)
     {
         EndRadius = StringToFloat(value);
     }
-    else if(!strcmp(key, "endradius", false))
-    {
-        EndRadius = StringToFloat(value);
-    }
     else if(!strcmp(key, "speed", false))
     {
         Speed = StringToInt(value);
