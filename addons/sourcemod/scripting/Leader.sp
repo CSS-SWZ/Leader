@@ -86,7 +86,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.1.1",
+    version = "1.1.2",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -527,17 +527,29 @@ void HandleAction(int action)
     Format(name, sizeof(name), "\x07%s%s", Colors[COLOR_NAME][1], name);
 
     int count = PhrasesCount[action];
-    int index = GetRandomInt(0, count - 1);
 
-    FormatEx(message_ru, sizeof(message_ru), "%s %s", name, Phrases[action][index]);
-    
+    if(count > 0)
+    {
+        int index = GetRandomInt(0, count - 1);
+        FormatEx(message_ru, sizeof(message_ru), "%s %s", name, Phrases[action][index]);
+        PrintActionRusMessage(message_ru);
+    }
+    else
+    {
+        switch(action)
+        {
+            case ACTION_DEATH:      FormatEx(message_ru, sizeof(message_ru), "%s %s", name, "пал смертью храбрых");
+            case ACTION_DISCONNECT: FormatEx(message_ru, sizeof(message_ru), "%s %s", name, "вышел с сервера");
+        }
+        PrintActionRusMessage(message_ru);
+    }
+
     switch(action)
     {
-        case ACTION_DEATH:      FormatEx(message_en, sizeof(message_ru), "%s %s", name, "has died");
+        case ACTION_DEATH:      FormatEx(message_en, sizeof(message_en), "%s %s", name, "has died");
         case ACTION_DISCONNECT: FormatEx(message_en, sizeof(message_en), "%s %s", name, "disconnected");
     }
 
-    PrintActionRusMessage(message_ru);
     PrintActionEngMessage(message_en);
 
     if(action != ACTION_LEADER_COME)

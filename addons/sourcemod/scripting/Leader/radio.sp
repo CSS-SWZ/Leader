@@ -120,8 +120,17 @@ void PrintRadio(int client, int radio)
     char message_en[256];
     
     int count = RadioPhrasesCount[radio];
-    int index = GetRandomInt(0, count - 1);
-    FormatEx(message_ru, sizeof(message_en), "\x01\x07%s%s \x07%s%s%s (РАДИО): \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], clantag, name, RadioPhrasesColors[radio][1], RadioPhrases[radio][index]);
+
+    if(count > 0)
+    {
+        int index = GetRandomInt(0, count - 1);
+        FormatEx(message_ru, sizeof(message_ru), "\x01\x07%s%s \x07%s%s%s (РАДИО): \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], clantag, name, RadioPhrasesColors[radio][1], RadioPhrases[radio][index]);
+    }
+    else
+    {
+        FormatEx(message_ru, sizeof(message_ru), "\x01\x07%s%s \x07%s%s%s (РАДИО): \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], clantag, name, RadioPhrasesColors[radio][1], RadioPhrasesEng[radio]);
+    }
+    
     FormatEx(message_en, sizeof(message_en), "\x01\x07%s%s \x07%s%s%s (RADIO): \x07%s%s", Colors[COLOR_TAG][1], TAG, Colors[COLOR_DEFAULT][1], clantag, name, RadioPhrasesColors[radio][1], RadioPhrasesEng[radio]);
     
     for(int i = 1; i <= MaxClients; i++)
