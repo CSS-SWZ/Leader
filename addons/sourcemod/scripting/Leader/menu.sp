@@ -38,6 +38,11 @@ void LeaderMenuDisplay()
     }
     #endif
 
+    #if defined PRIORITY
+    FormatEx(buffer, sizeof(buffer), "%s: [%s]", russian ? "Приоритет голоса":"Voice priority", IsPriorityActive() ? "+":"-");
+    LeaderMenu.AddItem("Priority", buffer);
+    #endif
+
     #if defined MARKERS
     LeaderMenu.AddItem("Markers", russian ? "Маркеры":"Markers");
     #endif
@@ -89,6 +94,14 @@ public int LeaderMenu_Handler(Menu menu, MenuAction action, int client, int item
         case 'C':
         {
             MuteToggle();
+            LeaderMenuDisplay();
+        }
+        #endif
+
+        #if defined PRIORITY
+        case 'P':
+        {
+            PriorityToggle();
             LeaderMenuDisplay();
         }
         #endif

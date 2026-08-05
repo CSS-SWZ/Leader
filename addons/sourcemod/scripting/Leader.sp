@@ -12,6 +12,7 @@
 #define TRAIL
 #define COOLDOWN
 #define FLAGS
+#define PRIORITY
 
 #define TAG "[Leader]"
 
@@ -67,6 +68,7 @@ Client Clients[MAXPLAYERS + 1];
 #include "Leader/libs.sp"
 #include "Leader/late.sp"
 #include "Leader/chat.sp"
+#include "Leader/voice.sp"
 #include "Leader/flags.sp"
 #include "Leader/markers.sp"
 #include "Leader/config.sp"
@@ -75,6 +77,7 @@ Client Clients[MAXPLAYERS + 1];
 #include "Leader/neon.sp"
 #include "Leader/radio.sp"
 #include "Leader/mute.sp"
+#include "Leader/priority.sp"
 #include "Leader/menu.sp"
 #include "Leader/cooldown.sp"
 
@@ -84,7 +87,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.3.5",
+    version = "1.4.0",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -181,6 +184,36 @@ public void OnMapEnd()
 {
     LateOnMapEnd();
 }
+
+#if defined PRIORITY
+public void OnConfigsExecuted()
+{
+    PriorityOnConfigsExecuted();
+}
+
+public void OnClientSpeakingEnd(int client)
+{
+    PriorityOnClientSpeakingEnd(client);
+}
+#endif
+
+#if defined MUTE || defined PRIORITY
+public void OnClientSpeaking(int client)
+{
+    #if defined PRIORITY
+    PriorityOnClientSpeaking(client);
+    #endif
+
+    #if defined MUTE
+    MuteOnClientSpeaking(client);
+    #endif
+}
+
+public void BaseComm_OnClientMute(int client, bool muteState)
+{
+    VoiceOnBaseCommMute(client, muteState);
+}
+#endif
 
 public void OnGameRestart(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
@@ -294,6 +327,11 @@ public Action Command_Leader(int client, int args)
 
                     #if defined MUTE
                     if(MuteParseCommand(buffer))
+                        return Plugin_Handled;
+                    #endif
+
+                    #if defined PRIORITY
+                    if(PriorityParseCommand(buffer))
                         return Plugin_Handled;
                     #endif
                 }
@@ -582,6 +620,14 @@ public void OnClientDisconnect(int client)
     TrailOnClientDisconnect(client);
     #endif
 
+    #if defined PRIORITY
+    PriorityOnClientDisconnect(client);
+    #endif
+
+    #if defined MUTE || defined PRIORITY
+    VoiceOnClientDisconnect(client);
+    #endif
+
     Clients[client].Access = false;
 }
 
@@ -678,6 +724,10 @@ void FeaturesOff()
 
     #if defined NEON
     NeonOff();
+    #endif
+
+    #if defined PRIORITY
+    PriorityOff();
     #endif
 }
 

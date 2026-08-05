@@ -11,18 +11,12 @@
 #define MUTE_ON_FORMAT_EN "%s muted everyone"
 #define MUTE_OFF_FORMAT_EN "%s unmuted everyone"
 
-// Жёсткая зависимость: включён под REQUIRE_PLUGIN, а basecomm.inc объявляет
-// SharedPlugin с required = 1 — без запущенного basecomm.smx плагин не загрузится.
-#include <basecomm>
-
 static bool Mute;
 
 static char Command[32] = "mute";
 
 static int NoteDelay[MAXPLAYERS + 1];
 static int NoteCount[MAXPLAYERS + 1];
-
-static bool Muted[MAXPLAYERS + 1];
 
 stock void MuteToggleMessage(bool toggle)
 {
@@ -91,7 +85,6 @@ stock void MuteOnClientDisconnect(int client)
 {
     NoteDelay[client] = 0;
     NoteCount[client] = 0;
-    Muted[client] = false;
 }
 
 bool MuteParseCommand(const char[] command)
@@ -114,7 +107,7 @@ void MuteOnKeyValue(const char[] key, const char[] value)
     }
 }
 
-public void OnClientSpeaking(int client)
+void MuteOnClientSpeaking(int client)
 {
     if(!Mute)
         return;
@@ -122,10 +115,7 @@ public void OnClientSpeaking(int client)
     if(client == CurrentLeader)
         return;
 
-    if(BaseComm_IsClientMuted(client))
-        return;
-
-    Muted[client] = BaseComm_SetClientMute(client, true);
+    VoiceMute(client, REASON_MUTE);
 }
 
 bool IsMuteActive()
@@ -154,10 +144,7 @@ void MuteOn(bool caused_by_client = false)
         if(CurrentLeader == i)
             continue;
 
-        if(BaseComm_IsClientMuted(i))
-            continue;
-
-        Muted[i] = BaseComm_SetClientMute(i, true);
+        VoiceMute(i, REASON_MUTE);
     }
     Mute = true;
 
@@ -171,23 +158,7 @@ void MuteOff(bool caused_by_client = false)
         return;
 
     for(int i = 1; i <= MaxClients; i++)
-    {
-        if(!Muted[i])
-            continue;
-
-        Muted[i] = false;
-
-        if(!IsClientInGame(i) || IsFakeClient(i))
-            continue;
-
-        if(CurrentLeader == i)
-            continue;
-
-        if(!BaseComm_IsClientMuted(i))
-            continue;
-
-        BaseComm_SetClientMute(i, false);
-    }
+        VoiceUnmute(i, REASON_MUTE);
 
     Mute = false;
 

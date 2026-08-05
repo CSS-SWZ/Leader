@@ -27,6 +27,10 @@ enum
     Section_Mute,
     #endif
 
+    #if defined PRIORITY
+    Section_Priority,
+    #endif
+
     Section_Total
 };
 
@@ -57,6 +61,10 @@ static const char Sections[][] =
 
     #if defined MUTE
     "Mute",
+    #endif
+
+    #if defined PRIORITY
+    "Priority",
     #endif
 
     "Total"
@@ -187,6 +195,10 @@ public SMCResult SMC_KeyValue(SMCParser smc, const char[] key, const char[] valu
 
         #if defined MUTE
         case Section_Mute: MuteOnKeyValue(key, value);
+        #endif
+
+        #if defined PRIORITY
+        case Section_Priority: PriorityOnKeyValue(key, value);
         #endif
     }
     return SMCParse_Continue;
