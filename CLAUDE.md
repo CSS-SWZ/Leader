@@ -62,10 +62,13 @@ Feature modules therefore never need their own "is the leader still valid" bookk
 ### Public API
 
 [api.sp](addons/sourcemod/scripting/Leader/api.sp) provides the `leader` library
-(`RegPluginLibrary`); the consumer-facing declarations live in
-[include/leader.inc](addons/sourcemod/scripting/include/leader.inc). The plugin includes that same
-file with `#define _leader_provider`, which skips the native declarations and the `SharedPlugin`
-block — so the `LeaderRemoveReason` enum exists in exactly one place.
+(`RegPluginLibrary`); the declarations live in
+[include/leader.inc](addons/sourcemod/scripting/include/leader.inc), which `Leader.sp` includes
+too — natives, `SharedPlugin` block and all. That is safe by design: `AskPluginLoad` (with our
+`CreateNative`s) runs at `PluginSys.cpp:966`, before `RunSecondPass` binds natives at L1325, and
+`FindOrRequirePluginDeps` skips a `__pl_*` block whose `file` field names the plugin declaring it
+(L1104-1106). The catch is that the skip is a filename `strcmp` — **`file = "Leader.smx"` in the
+.inc must match whatever the .smx is actually called.**
 
 The module is deliberately **not** gated: every native is registered whatever the `#define`s are,
 because a consumer must not crash on a missing native depending on how this plugin was built.

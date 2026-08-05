@@ -2,7 +2,6 @@
 #include <sdktools>
 #include <cstrike>
 
-#define _leader_provider
 #include "include/leader.inc"
 
 #undef REQUIRE_PLUGIN

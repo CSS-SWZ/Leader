@@ -6,9 +6,6 @@
  *     #undef REQUIRE_PLUGIN
  *     #tryinclude <leader>
  *     #define REQUIRE_PLUGIN
- *
- * Сам плагин подключает файл с #define _leader_provider — тогда объявления
- * нативов и блок зависимости пропускаются, остаются только общие типы.
  */
 
 #if defined _leader_included
@@ -51,8 +48,6 @@ forward void Leader_OnLeaderSet(int client);
  *                  за карту или за сессию — задача вызывающего плагина.
  */
 forward void Leader_OnLeaderRemoved(int client, LeaderRemoveReason reason, float duration);
-
-#if !defined _leader_provider
 
 /**
  * Возвращает действующего лидера.
@@ -113,6 +108,9 @@ native bool Leader_IsClientPotentialLeader(int client);
  */
 native int Leader_GetPotentialLeadersCount();
 
+// Файл подключает и сам плагин, поэтому "file" обязан совпадать с именем
+// собранного .smx: SourceMod пропускает блок __pl_*, ведущий на плагин, в
+// котором объявлен, сравнивая именно имя файла (PluginSys.cpp:1104-1106).
 public SharedPlugin __pl_leader =
 {
     name = "leader",
@@ -135,6 +133,4 @@ public void __pl_leader_SetNTVOptional()
     MarkNativeAsOptional("Leader_IsClientPotentialLeader");
     MarkNativeAsOptional("Leader_GetPotentialLeadersCount");
 }
-#endif
-
 #endif
