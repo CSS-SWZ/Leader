@@ -2,6 +2,9 @@
 #include <sdktools>
 #include <cstrike>
 
+#define _leader_provider
+#include "include/leader.inc"
+
 #undef REQUIRE_PLUGIN
 #tryinclude <sourcebanspp>
 #define REQUIRE_PLUGIN
@@ -64,6 +67,7 @@ enum struct Client
 
 Client Clients[MAXPLAYERS + 1];
 
+#include "Leader/api.sp"
 #include "Leader/utils.sp"
 #include "Leader/libs.sp"
 #include "Leader/late.sp"
@@ -87,14 +91,15 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.4.0",
+    version = "1.5.0",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+    APIInit();
     LateOnAskPluginLoad2(late);
-    
+
     return APLRes_Success;
 }
 
@@ -112,6 +117,7 @@ public void OnPluginStart()
 {
     LibsInit();
     LateInit();
+    APIOnPluginStart();
 
     if((RussianLanguageId = GetLanguageByCode("ru")) == -1)
     	SetFailState("Cant find russian language (see languages.cfg)");
@@ -153,6 +159,9 @@ public void OnPluginStart()
 public void OnPluginEnd()
 {
     FeaturesOff();
+
+    if(CurrentLeader)
+        APIOnLeaderRemoved(CurrentLeader, LeaderRemove_Reset);
 }
 
 public void OnMapStart()
@@ -230,7 +239,14 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
     CooldownOnRoundStart();
     #endif
     FeaturesOff();
-    CurrentLeader = 0;
+
+    // Обычно к этому моменту лидер уже снят через round_end; страховка на случай
+    // раунда, начавшегося без него.
+    if(CurrentLeader)
+    {
+        APIOnLeaderRemoved(CurrentLeader, LeaderRemove_Reset);
+        CurrentLeader = 0;
+    }
 }
 
 public void Event_Callback(Event event, const char[] name, bool dontBroadcast)
@@ -637,7 +653,12 @@ bool NewLeader(int client)
 
     if(team == 2 || (team > 1 && !IsPlayerAlive(client)))
         return false;
-    
+
+    // Назначение поверх действующего лидера возможно только через Leader_SetLeader:
+    // команда sm_leader до этого места с занятым постом не доходит.
+    if(CurrentLeader && CurrentLeader != client)
+        APIOnLeaderRemoved(CurrentLeader, LeaderRemove_Replaced);
+
     CurrentLeader = client;
     HandleAction(ACTION_LEADER_COME);
     LeaderMenuDisplay();
@@ -702,8 +723,15 @@ void HandleAction(int action)
         PrintActionEngMessage(message_en);
     }
 
-    if(action != ACTION_LEADER_COME)
+    if(action == ACTION_LEADER_COME)
+    {
+        APIOnLeaderSet(CurrentLeader);
+    }
+    else
+    {
+        APIOnHandleAction(action);
         CurrentLeader = 0;
+    }
 }
 
 void FeaturesOff()

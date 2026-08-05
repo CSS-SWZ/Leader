@@ -59,6 +59,27 @@ role ends (death, disconnect, team switch to spectators/T, round end, voluntary 
 `CurrentLeader` — except for `ACTION_LEADER_COME`. Round start (`Event_RoundStart`) also clears it.
 Feature modules therefore never need their own "is the leader still valid" bookkeeping.
 
+### Public API
+
+[api.sp](addons/sourcemod/scripting/Leader/api.sp) provides the `leader` library
+(`RegPluginLibrary`); the consumer-facing declarations live in
+[include/leader.inc](addons/sourcemod/scripting/include/leader.inc). The plugin includes that same
+file with `#define _leader_provider`, which skips the native declarations and the `SharedPlugin`
+block — so the `LeaderRemoveReason` enum exists in exactly one place.
+
+The module is deliberately **not** gated: every native is registered whatever the `#define`s are,
+because a consumer must not crash on a missing native depending on how this plugin was built.
+
+`Leader_OnLeaderSet` / `Leader_OnLeaderRemoved` must pair up exactly once each. That means every
+transition of `CurrentLeader` fires one — the three sites are `HandleAction` (its `ACTION_*`
+translated to a `LeaderRemoveReason` by `APIOnHandleAction`), `Event_RoundStart` and `NewLeader`
+when it overwrites a sitting leader (only reachable via `Leader_SetLeader`), plus `OnPluginEnd`.
+Adding a fourth place that writes `CurrentLeader` means adding a forward call there too.
+
+`Leader_OnLeaderRemoved` reports the duration of *that one* leadership, not a per-player total:
+summing is the consumer's business, and doing it here would force decisions about map/session
+resets and reconnects that belong to a stats plugin.
+
 ### Feature-module contract
 
 Beacon, trail, neon, markers, mute and priority all implement the same shape, and adding a new
