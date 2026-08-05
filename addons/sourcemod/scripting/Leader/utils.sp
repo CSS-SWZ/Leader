@@ -1,4 +1,4 @@
-int GetClientByAccount(int account)
+stock int GetClientByAccount(int account)
 {
     for(int i = 1; i <= MaxClients; ++i)
     {

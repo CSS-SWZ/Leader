@@ -11,6 +11,8 @@
 #define MUTE_ON_FORMAT_EN "%s muted everyone"
 #define MUTE_OFF_FORMAT_EN "%s unmuted everyone"
 
+// Жёсткая зависимость: включён под REQUIRE_PLUGIN, а basecomm.inc объявляет
+// SharedPlugin с required = 1 — без запущенного basecomm.smx плагин не загрузится.
 #include <basecomm>
 
 static bool Mute;
@@ -52,11 +54,11 @@ stock void MuteToggleMessage(bool toggle)
     
         if(GetClientLanguage(i) == RussianLanguageId)
         {
-            LeaderPrintToChat(i, message_ru);
+            LeaderPrintToChat(i, "%s", message_ru);
         }
         else
         {
-            LeaderPrintToChat(i, message_en);
+            LeaderPrintToChat(i, "%s", message_en);
         }
     }
 }
@@ -97,7 +99,7 @@ bool MuteParseCommand(const char[] command)
     if(strcmp(Command, command, false))
         return false;
     
-    if(!(GetUserFlagBits(CurrentLeader) & ADMFLAG_BAN))
+    if(!(GetUserFlagBits(CurrentLeader) & (ADMFLAG_BAN|ADMFLAG_ROOT)))
         return true;
 
     MuteToggle(false);

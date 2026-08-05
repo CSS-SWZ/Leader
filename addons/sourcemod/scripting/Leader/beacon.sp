@@ -58,11 +58,11 @@ stock void BeaconToggleMessage(bool toggle)
     
         if(GetClientLanguage(i) == RussianLanguageId)
         {
-            LeaderPrintToChat(i, message_ru);
+            LeaderPrintToChat(i, "%s", message_ru);
         }
         else
         {
-            LeaderPrintToChat(i, message_en);
+            LeaderPrintToChat(i, "%s", message_en);
         }
     }
 }

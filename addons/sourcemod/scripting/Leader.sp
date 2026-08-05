@@ -15,7 +15,7 @@
 
 #define TAG "[Leader]"
 
-#define MAX_PHRASES 10
+#define MAX_PHRASES 32
 #define MAX_LEADERS 100
 
 #define NOTE_DELAY 120
@@ -43,7 +43,7 @@ int RussianLanguageId;
 char Colors[COLORS_TOTAL][16];
 
 int PhrasesCount[ACTIONS_TOTAL];
-char Phrases[ACTIONS_TOTAL][MAX_PHRASES][64];
+char Phrases[ACTIONS_TOTAL][MAX_PHRASES][128];
 
 int CurrentLeader;
 
@@ -84,7 +84,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.3.4",
+    version = "1.3.5",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -401,7 +401,7 @@ public Action Command_Leaders(int client, int args)
         default: message[strlen(message) - 2] = 0;
     }
 
-    LeaderPrintToChat(client, message);
+    LeaderPrintToChat(client, "%s", message);
     return Plugin_Handled;
 }
 
@@ -483,9 +483,7 @@ public Action Command_LeadersAdd2(int client, int args)
         return Plugin_Handled;
     }
 
-    int target = GetClientByAccount(account);
-
-    if(target && IsClientPotentialLeader(target))
+    if(FindAccountInLeaderList(account) != -1)
     {
         ReplyToCommand(client, "Failure: target is already potential leader!");
         return Plugin_Handled;
@@ -543,11 +541,9 @@ public void OnClientPutInServer(int client)
     {
         int account = GetSteamAccountID(client);
 
-        int index = FindAccountInLeaderList(account);
-
-        if(index != -1)
-            Clients[client].Access = true;
-
+        // Присваиваем, а не выставляем: иначе после sm_leaders_reload удалённый
+        // из leaders.txt игрок сохранял бы доступ до переподключения.
+        Clients[client].Access = (FindAccountInLeaderList(account) != -1);
     }
 
     #if defined FLAGS
@@ -692,7 +688,7 @@ void PrintActionRusMessage(const char[] message)
         if(!IsClientInGame(i) || GetClientLanguage(i) != RussianLanguageId)
             continue;
 
-        LeaderPrintToChat(i, message);
+        LeaderPrintToChat(i, "%s", message);
     }
 }
 
@@ -706,7 +702,7 @@ void PrintActionEngMessage(const char[] message)
         if(!IsClientInGame(i) || GetClientLanguage(i) == RussianLanguageId)
             continue;
 
-        LeaderPrintToChat(i, message);
+        LeaderPrintToChat(i, "%s", message);
     }
 }
 
@@ -751,13 +747,26 @@ void LoadLeaders()
         return;
 
     int account;
-    char line[40];
+    char line[256];
+    bool truncated;
     while(!file.EndOfFile())
     {
         if(LeadersCount >= MAX_LEADERS)
+        {
+            LogError("configs/leaders.txt: reached MAX_LEADERS (%i), rest of the file ignored", MAX_LEADERS);
             break;
+        }
 
         if(!file.ReadLine(line, sizeof(line)))
+            continue;
+
+        // Строка длиннее буфера приходит несколькими кусками (ReadLine == fgets,
+        // так что признак целой строки — наличие \n). Хвост разбирать нельзя:
+        // конец длинного комментария иначе стал бы account id.
+        bool tail = truncated;
+        truncated = (StrContains(line, "\n") == -1) && !file.EndOfFile();
+
+        if(tail)
             continue;
 
         if(TrimString(line) <= 0 || line[0] == '#')

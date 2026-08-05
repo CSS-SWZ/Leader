@@ -31,7 +31,7 @@ void LeaderMenuDisplay()
     #endif
 
     #if defined MUTE
-    if(GetUserFlagBits(CurrentLeader) & ADMFLAG_BAN)
+    if(GetUserFlagBits(CurrentLeader) & (ADMFLAG_BAN|ADMFLAG_ROOT))
     {
         FormatEx(buffer, sizeof(buffer), "%s: [%s]", russian ? "Мут всех":"Mute all", IsMuteActive() ? "+":"-");
         LeaderMenu.AddItem("Comms", buffer);

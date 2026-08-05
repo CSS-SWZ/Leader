@@ -1,21 +1,23 @@
+// Размер буфера фиксирован: длина строки формата ничего не говорит о длине
+// результата, а SayText2 всё равно режет сообщение по лимиту usermessage.
+#define MESSAGE_MAX_LENGTH 512
+
 void LeaderPrintToChat(int client, const char[] message, any ...)
 {
-	int len = strlen(message) + 255;
-	char[] buffer = new char[len];
-	VFormat(buffer, len, message, 3);
-	SendMessage(client, buffer, len);
+	char buffer[MESSAGE_MAX_LENGTH];
+	VFormat(buffer, sizeof(buffer), message, 3);
+	SendMessage(client, buffer, sizeof(buffer));
 }
 
 stock void LeaderPrintToChatAll(const char[] message, any ...)
 {
-	int len = strlen(message) + 255;
-	char[] buffer = new char[len];
+	char buffer[MESSAGE_MAX_LENGTH];
 	for(int i = 1; i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i))
 		{
-			VFormat(buffer, len, message, 2);
-			SendMessage(i, buffer, len);
+			VFormat(buffer, sizeof(buffer), message, 2);
+			SendMessage(i, buffer, sizeof(buffer));
 		}
 	}
 }

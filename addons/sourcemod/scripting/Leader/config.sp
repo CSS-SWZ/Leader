@@ -32,6 +32,9 @@ enum
 
 static bool SectionLoaded[Section_Total];
 
+// Чтобы не сыпать в лог по строке на каждое лишнее значение.
+static bool PhrasesOverflow[ACTIONS_TOTAL];
+
 static const char Sections[][] = 
 {
     "Phrases",
@@ -113,16 +116,15 @@ public SMCResult SMC_NewSection(SMCParser smc, const char[] name, bool opt_quote
     {
         case Section_None:
         {
-            switch(CurrentSection)
-            {
-                case Section_None: return SMCParse_Halt;
-                #if defined MARKERS
-                case Section_Markers:
-                {
-                    MarkersOnNewSection(name);
-                }
-                #endif
-            }
+            // Неизвестная секция верхнего уровня просто игнорируется. Раньше тут
+            // был SMCParse_Halt, а он не является ошибкой (ParseFile вернёт
+            // SMCError_Okay) — парсер молча обрывался и терялся весь остаток
+            // конфига. Ловилось при сборке без MARKERS: секция "Markers" идёт в
+            // leader.cfg первой.
+            #if defined MARKERS
+            if(CurrentSection == Section_Markers)
+                MarkersOnNewSection(name);
+            #endif
         }
         default:
         {
@@ -147,7 +149,14 @@ public SMCResult SMC_KeyValue(SMCParser smc, const char[] key, const char[] valu
             int count = PhrasesCount[index];
 
             if(count >= MAX_PHRASES)
+            {
+                if(!PhrasesOverflow[index])
+                {
+                    PhrasesOverflow[index] = true;
+                    LogError("leader.cfg: \"Phrases\" key \"%s\" exceeds MAX_PHRASES (%i), extra values ignored", key, MAX_PHRASES);
+                }
                 return SMCParse_Continue;
+            }
 
             strcopy(Phrases[index][count], sizeof(Phrases[][]), value);
             PhrasesCount[index]++;

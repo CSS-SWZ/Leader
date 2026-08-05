@@ -16,7 +16,7 @@ static float LifeTime = 2.0;
 static float StartWidth = 15.0;
 static float EndWidth = 20.0;
 static char SpriteName[256] = "materials/nide/leader/trail.vmt";
-static char Shift[16] = "0 10.0 10.0";
+static char Shift[32] = "0 10.0 10.0";
 
 static int Trail;
 
@@ -55,11 +55,11 @@ stock void TrailToggleMessage(bool toggle)
     
         if(GetClientLanguage(i) == RussianLanguageId)
         {
-            LeaderPrintToChat(i, message_ru);
+            LeaderPrintToChat(i, "%s", message_ru);
         }
         else
         {
-            LeaderPrintToChat(i, message_en);
+            LeaderPrintToChat(i, "%s", message_en);
         }
     }
 }
@@ -181,8 +181,8 @@ void TrailOn(bool caused_by_client = false)
         
     DispatchSpawn(entity);
 
-    char angle[3][8];
-    float angles[3]; 
+    char angle[3][16];
+    float angles[3];
 
     ExplodeString(Shift, " ", angle, sizeof(angle), sizeof(angle[]), false);
     angles[0] = StringToFloat(angle[0]);

@@ -2,8 +2,11 @@
 #define MAX_RADIO_PHRASES 10
 
 static int RadioPhrasesCount[RADIO_TOTAL];
-static char RadioPhrases[RADIO_TOTAL][MAX_RADIO_PHRASES][64];
+static char RadioPhrases[RADIO_TOTAL][MAX_RADIO_PHRASES][128];
 static char RadioPhrasesColors[RADIO_TOTAL][16];
+
+// Чтобы не сыпать в лог по строке на каждое лишнее значение.
+static bool RadioOverflow[RADIO_TOTAL];
 
 static const char RadioCommands[][] = 
 {
@@ -65,7 +68,14 @@ void RadioOnKeyValue(const char[] key, const char[] value)
     int count = RadioPhrasesCount[radio];
 
     if(count >= MAX_RADIO_PHRASES)
+    {
+        if(!RadioOverflow[radio])
+        {
+            RadioOverflow[radio] = true;
+            LogError("leader.cfg: \"Radio\" key \"%s\" exceeds MAX_RADIO_PHRASES (%i), extra values ignored", key, MAX_RADIO_PHRASES);
+        }
         return;
+    }
 
     strcopy(RadioPhrases[radio][count], sizeof(RadioPhrases[][]), value);
     ++RadioPhrasesCount[radio];
@@ -111,7 +121,9 @@ void PrintRadio(int client, int radio)
     char clantag[32];
     CS_GetClientClanTag(client, clantag, sizeof(clantag));
 
-    if(!clantag[0])
+    // Разделитель нужен при НЕпустом теге; условие было обратным, из-за чего
+    // получалось "[ADM]Ник" вместо "[ADM] Ник".
+    if(clantag[0])
         StrCat(clantag, sizeof(clantag), " ");
     
     char name[64];
@@ -140,11 +152,11 @@ void PrintRadio(int client, int radio)
     
         if(GetClientLanguage(i) == RussianLanguageId)
         {
-            PrintToChat(i, message_ru);
+            PrintToChat(i, "%s", message_ru);
         }
         else
         {
-            PrintToChat(i, message_en);
+            PrintToChat(i, "%s", message_en);
         }
     }
 }
