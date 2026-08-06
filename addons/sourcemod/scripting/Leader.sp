@@ -90,7 +90,7 @@ public Plugin myinfo =
     name = "Leader",
     author = "hEl",
     description = "Provides special features to the leader",
-    version = "1.5.0",
+    version = "1.5.1",
     url = "https://github.com/CSS-SWZ/Leader"
 };
 
@@ -825,7 +825,6 @@ void LoadLeaders()
 
     int account;
     char line[256];
-    bool truncated;
     while(!file.EndOfFile())
     {
         if(LeadersCount >= MAX_LEADERS)
@@ -835,15 +834,6 @@ void LoadLeaders()
         }
 
         if(!file.ReadLine(line, sizeof(line)))
-            continue;
-
-        // Строка длиннее буфера приходит несколькими кусками (ReadLine == fgets,
-        // так что признак целой строки — наличие \n). Хвост разбирать нельзя:
-        // конец длинного комментария иначе стал бы account id.
-        bool tail = truncated;
-        truncated = (StrContains(line, "\n") == -1) && !file.EndOfFile();
-
-        if(tail)
             continue;
 
         if(TrimString(line) <= 0 || line[0] == '#')
