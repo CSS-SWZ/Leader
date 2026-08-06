@@ -41,11 +41,72 @@ phrases, models, radii and command names all come from a config file.
 | `!leader @<feature>` | Toggle one feature straight from chat, e.g. `!leader @beacon`. |
 | `!leaders` | List the players currently on the server who are allowed to lead. |
 
-## For other plugins
+## API
 
-The plugin registers the `leader` library and exposes a small API: forwards for a leader being
-set and removed (the removal carries a reason and how long the leadership lasted), plus natives
-to query the current leader, force one, or check who is allowed to lead.
+The plugin registers the `leader` library. Copy `leader.inc` into your `scripting/include` and
+depend on it however you like — as a hard requirement, or optionally:
+
+```sourcepawn
+#undef REQUIRE_PLUGIN
+#tryinclude <leader>
+#define REQUIRE_PLUGIN
+```
+
+### Forwards
+
+```sourcepawn
+forward void Leader_OnLeaderSet(int client);
+forward void Leader_OnLeaderRemoved(int client, LeaderRemoveReason reason, float duration);
+```
+
+Exactly one `Leader_OnLeaderRemoved` follows every `Leader_OnLeaderSet`, whatever ended the
+leadership. `duration` is the length of that one leadership in seconds — if you want a per-player
+total, add it up yourself; the plugin deliberately keeps no such tally.
+
+On `LeaderRemove_Disconnect` the forward arrives while the player is still counted as in-game, so
+their name and Steam ID are still readable.
+
+### Removal reasons
+
+| | |
+| --- | --- |
+| `LeaderRemove_Death` | Died or turned zombie. |
+| `LeaderRemove_Disconnect` | Left the server, or the map changed. |
+| `LeaderRemove_RoundDraw` | Round ended in a draw, or was restarted. |
+| `LeaderRemove_RoundWin` | Humans won the round. |
+| `LeaderRemove_RoundLose` | Humans lost the round. |
+| `LeaderRemove_Left` | Stepped down, was removed by an admin, or `Leader_RemoveLeader`. |
+| `LeaderRemove_Replaced` | `Leader_SetLeader` put someone else in the role. |
+| `LeaderRemove_Reset` | State reset: round start, or the plugin unloading. |
+
+### Natives
+
+```sourcepawn
+native int   Leader_GetLeader();                          // current leader, or 0 if there is none
+native float Leader_GetLeaderTime();                      // seconds the current leader has held the role
+native bool  Leader_IsClientLeader(int client);
+native bool  Leader_SetLeader(int client);                // force, ignoring the whitelist and the cooldown
+native bool  Leader_RemoveLeader();
+native bool  Leader_IsClientPotentialLeader(int client);  // allowed to lead at all
+native int   Leader_GetPotentialLeadersCount();
+```
+
+`Leader_SetLeader` fails only if the target is already the leader, is playing zombie, or is dead.
+If someone else holds the role, they are removed first with `LeaderRemove_Replaced`.
+
+### Example
+
+```sourcepawn
+static float TotalTime[MAXPLAYERS + 1];
+
+public void Leader_OnLeaderRemoved(int client, LeaderRemoveReason reason, float duration)
+{
+    TotalTime[client] += duration;
+
+    if(reason == LeaderRemove_RoundWin)
+        PrintToChatAll("%N led the team to a win, %.0f seconds in charge.", client, duration);
+}
+```
 
 ## Languages
 
